@@ -106,7 +106,7 @@
 
             // Send API request to chatbot API with a teacher-based context
             let teacherContext = "You are a very intelligent teacher who knows everything. Provide educational answers in a clear and helpful way.";
-            fetch(`https://api.allorigins.win/get?url=https://gpt.hazex.workers.dev/?ques=${encodeURIComponent(teacherContext + " " + userInput)}`)
+            fetch(`https://thingproxy.freeboard.io/fetch/https://gpt.hazex.workers.dev/?ques=${encodeURIComponent(teacherContext + " " + userInput)}`)
                 .then(response => response.json())
                 .then(data => {
                     // Display bot response in chat box
