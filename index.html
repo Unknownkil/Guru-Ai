@@ -72,12 +72,14 @@
             border-radius: 0 5px 5px 0;
             cursor: pointer;
         }
+        .upload-box {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
     <div class="chat-container">
-        <!-- Chat Header similar to the one you provided -->
         <div class="chat-header">
             <img src="https://iili.io/d8ixUpS.md.jpg" alt="Guru AI"> <!-- Replace with Guru AI image -->
             <h2>Chat with Guru AI</h2>
@@ -86,9 +88,15 @@
         <div class="chat-box" id="chat-box">
             <p><strong>Guru AI:</strong> Hello! I am your personal very intelligent teacher. Ask me anything and I will help you with the answers!</p>
         </div>
+
         <div class="input-box">
             <input type="text" id="user-input" placeholder="Ask a question...">
             <button onclick="sendMessage()">Send</button>
+        </div>
+
+        <div class="upload-box">
+            <input type="file" id="image-upload" accept="image/*">
+            <button onclick="uploadImage()">Upload Image</button>
         </div>
     </div>
 
@@ -97,24 +105,77 @@
             let userInput = document.getElementById('user-input').value;
             if (userInput.trim() === '') return;
 
-            // Display user question in chat box
             let chatBox = document.getElementById('chat-box');
             chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
 
-            // Clear input field
             document.getElementById('user-input').value = '';
 
-            // Send API request to chatbot API with a teacher-based context
             let teacherContext = "You are a very intelligent teacher who knows everything. Provide educational answers in a clear and helpful way.";
-            fetch(`https://proxy.cors.sh/https://chatgpt.hideme.eu.org/?ask=${encodeURIComponent(teacherContext + " " + userInput)}`)
+            fetch(`https://chatgpt.hideme.eu.org/?ask=${encodeURIComponent(teacherContext + " " + userInput)}`)
                 .then(response => response.json())
                 .then(data => {
-                    // Display bot response in chat box
                     chatBox.innerHTML += `<p><strong>Guru AI:</strong> ${data.answer}</p>`;
-                    chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+                    chatBox.scrollTop = chatBox.scrollHeight;
                 })
                 .catch(error => {
                     chatBox.innerHTML += `<p><strong>Guru AI:</strong> Sorry, I couldn't get the answer. Please try again!</p>`;
+                });
+        }
+
+        function uploadImage() {
+            let fileInput = document.getElementById('image-upload');
+            let file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select an image.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append('image', file);
+
+            // Send the image to an OCR API for text extraction
+            fetch('https://api.ocr.space/parse/image', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'apikey': 'YOUR_OCR_API_KEY'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                let parsedText = data.ParsedResults[0].ParsedText;
+
+                if (parsedText.trim()) {
+                    // If text is found, send it to the ChatGPT API
+                    sendMessage(parsedText);
+                } else {
+                    // If no text is found, use YouTube search API
+                    searchYoutube(file.name);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error occurred during image upload.');
+            });
+        }
+
+        function searchYoutube(query) {
+            fetch(`https://yt-search.hazex.workers.dev/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    let chatBox = document.getElementById('chat-box');
+                    if (!data.error && data.results.length > 0) {
+                        data.results.forEach(video => {
+                            chatBox.innerHTML += `<p><strong>Title:</strong> ${video.title} <br> <a href="${video.link}" target="_blank">Watch</a></p>`;
+                        });
+                    } else {
+                        chatBox.innerHTML += `<p><strong>Guru AI:</strong> No results found for the image on YouTube.</p>`;
+                    }
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('YouTube Search Error:', error);
                 });
         }
     </script>
